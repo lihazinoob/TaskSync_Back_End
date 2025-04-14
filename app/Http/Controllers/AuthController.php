@@ -13,28 +13,24 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         try {
-
             $request->validate([
-                'name' => 'required|string|max:255',
+                'username' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:8',
             ]);
 
             $user = User::create([
-                'name' => $request->name,
+                'name' => $request->username,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
             ]);
-            // generate the access token
-            $accesstoken = JWTAuth::fromUser($user);
-            // generate the refresh token
-            $refreshtoken = JWTAuth::fromUser($user, true);
 
-            // Store the refresh token in HTTP only cookie
+            $accesstoken = JWTAuth::fromUser($user);
+            $refreshtoken = JWTAuth::fromUser($user); // Adjust if you have a proper refresh token mechanism
 
             return response()->json([
                 'access_token' => $accesstoken,
-                'message' => 'Registration is Successfull'
+                'message' => 'Registration is Successful'
             ], 201)
             ->cookie('refresh_token', $refreshtoken, 43200, null, null, true, true, false, 'Strict');
         } catch (ValidationException $e) {
@@ -42,6 +38,12 @@ class AuthController extends Controller
                 'error' => 'Validation failed',
                 'messages' => $e->getMessage(),
             ], 422);
+        } catch (\Exception $e) {
+            Log::error('Registration error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'An unexpected error occurred',
+                'message' => $e->getMessage(), // Remove in production
+            ], 500);
         }
     }
 }
