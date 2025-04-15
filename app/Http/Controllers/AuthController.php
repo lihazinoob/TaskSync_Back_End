@@ -63,9 +63,11 @@ class AuthController extends Controller
                     'error' => 'There is no refresh token'
                 ],401);
             }
-            $token = JWTAuth::refresh($refreshToken);
+            JWTAuth::setToken($refreshToken);
+            $user = JWTAuth::toUser($refreshToken);
+            $newAccessToken = JWTAuth::fromUser($user);
             return response()->json([
-                'access_token' => $token,
+                'access_token' => $newAccessToken,
                 'message' => 'Token Defined',
             ]);
             
