@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Dotenv\Exception\ValidationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -43,7 +44,42 @@ class AuthController extends Controller
                 'messages' => $e->getMessage(),
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Registration error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'An unexpected error occurred',
+                'message' => $e->getMessage(), // Remove in production
+            ], 500);
+        }
+    }
+
+    public function login(Request $request)
+    {
+        try {
+            $request->validate([
+                'email' => 'required|string|email|max:256',
+                'password' => 'required|string|min:8'
+            ]);
+            $credentials = $request->only('email', 'password');
+            $accessToken = JWTAuth::attempt($credentials);
+            if (!$accessToken) {
+                return response()->json([
+                    'error' => 'Invalid Credentials',
+                    'message' => 'The provided credentials are not correct'
+                ], 401);
+            }
+
+            $user = Auth::user();
+            $refreshToken = JWTAuth::fromUser($user);
+            return response()->json([
+                'access_token' => $accessToken,
+                'message' => 'Registration is Successful'
+            ], 201)
+                ->cookie('refresh_token', $refreshToken, 43200, null, null, true, true, false, 'Strict');
+        } catch (ValidationException $validationException) {
+            return response()->json([
+                'error' => 'Validation Failed',
+                'messages' => $validationException->getMessage(),
+            ], 422);
+        } catch (\Exception $e) {
             return response()->json([
                 'error' => 'An unexpected error occurred',
                 'message' => $e->getMessage(), // Remove in production
@@ -57,11 +93,10 @@ class AuthController extends Controller
         try {
             // Fetching the refre3sh token from the cookie
             $refreshToken = $request->cookie('refresh_token');
-            if(!$refreshToken)
-            {
+            if (!$refreshToken) {
                 return response()->json([
                     'error' => 'There is no refresh token'
-                ],401);
+                ], 401);
             }
             JWTAuth::setToken($refreshToken);
             $user = JWTAuth::toUser($refreshToken);
@@ -70,7 +105,6 @@ class AuthController extends Controller
                 'access_token' => $newAccessToken,
                 'message' => 'Token Defined',
             ]);
-            
         } catch (JWTException $jWTException) {
             return response()->json([
                 'error' => 'Could not Refresh the access tokem from the refresh token',
