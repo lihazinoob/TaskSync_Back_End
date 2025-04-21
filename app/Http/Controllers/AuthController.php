@@ -126,7 +126,8 @@ class AuthController extends Controller
     {
         try {
             $githubUser = Socialite::driver('github')->stateless()->user();
-            $user = User::where('email', $githubUser->email)->first;
+            Log::info('GitHub User Data:', (array)$githubUser);
+            $user = User::where('email', $githubUser->email)->first();
             if ($user) {
                 if (!$user->github_id) {
                     $user->update([
@@ -152,7 +153,6 @@ class AuthController extends Controller
                         'id' => $user->id,
                         'name' => $user->name,
                         'email' => $user->email,
-                        'role' => $user->role,
                     ],
                     'message' => 'GitHub authentication successful',
                 ])->cookie('refresh_token', $refreshToken, 43200, null, null, true, true, false, 'Strict');

@@ -8,3 +8,6 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/refresh',[AuthController::class,'generateAccessTokenFromRefreshToken']);
 Route::post('/login',[AuthController::class,'login']);
+
+Route::get('/auth/github',[AuthController::class,'redirectToGithub']);
+Route::get('/auth/github/callback',[AuthController::class,'handleGitHubCallBack']);
