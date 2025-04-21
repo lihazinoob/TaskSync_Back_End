@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Log;
+use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -108,6 +110,57 @@ class AuthController extends Controller
         } catch (JWTException $jWTException) {
             return response()->json([
                 'error' => 'Could not Refresh the access tokem from the refresh token',
+            ], 401);
+        }
+    }
+
+    // Returns the GitHub OAuth URL for the frontend to redirect the user.
+    public function redirectToGithub()
+    {
+        return response()->json([
+            'url' => Socialite::driver('github')->stateless()->redirect()->getTargetUrl(),
+        ]);
+    }
+
+    public function handleGitHubCallBack()
+    {
+        try {
+            $githubUser = Socialite::driver('github')->stateless()->user();
+            $user = User::where('email', $githubUser->email)->first;
+            if ($user) {
+                if (!$user->github_id) {
+                    $user->update([
+                        'github_id' => $githubUser->id
+                    ]);
+                }
+            } else {
+                $user = User::create([
+                    'name' => $githubUser->name ?? $githubUser->nickname ?? 'user_' . Str::random(8),
+                    'email' => $githubUser->email,
+                    'github_id' => $githubUser->id,
+                    'password' => bcrypt(Str::random(16)), // Random password for social login
+
+                ]);
+
+                $accessToken = JWTAuth::fromUser($user);
+                $refreshToken = JWTAuth::fromUser($user);
+
+
+                return response()->json([
+                    'access_token' => $accessToken,
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                    ],
+                    'message' => 'GitHub authentication successful',
+                ])->cookie('refresh_token', $refreshToken, 43200, null, null, true, true, false, 'Strict');
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Unable to authenticate with Github',
+                'message' => $e->getMessage()
             ], 401);
         }
     }
