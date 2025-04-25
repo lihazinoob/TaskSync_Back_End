@@ -40,6 +40,13 @@ class User extends Authenticatable implements JWTSubject
      *
      * @return array<string, string>
      */
+
+    //  A user can create Many Project under his name
+    public function projects()
+    {
+        return $this->hasMany(Project::class);
+    }
+
     protected function casts(): array
     {
         return [
