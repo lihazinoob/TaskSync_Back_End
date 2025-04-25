@@ -115,18 +115,43 @@ class AuthController extends Controller
     }
 
     // Returns the GitHub OAuth URL for the frontend to redirect the user.
-    public function redirectToGithub()
+    public function redirectToGithub(Request $request)
     {
-        return response()->json([
-            'url' => Socialite::driver('github')->stateless()->redirect()->getTargetUrl(),
-        ]);
+        Log::info("Inside The redirect top GitHub Function");
+        try {
+            $redirectUri = $request->query('redirect', 'http://localhost:5173/register');
+            $state = $request->query('state');
+            Log::info('Dynamic Redirect URI:', ['redirect' => $redirectUri, 'state' => $state]);
+
+            $redirectUrl = Socialite::driver('github')
+                ->scopes(['user:email'])
+                ->stateless()
+                ->redirectUrl($redirectUri)
+                ->redirect()
+                ->getTargetUrl();
+
+            // Manually append the state parameter to the URL
+            if ($state) {
+                $redirectUrl .= (parse_url($redirectUrl, PHP_URL_QUERY) ? '&' : '?') . 'state=' . urlencode($state);
+            }
+            Log::info("After The Socialite Execution");
+            return response()->json([
+                'url' => $redirectUrl,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('RedirectToGithub Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'error' => 'Failed to generate GitHub redirect URL',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function handleGitHubCallBack()
     {
         try {
             $githubUser = Socialite::driver('github')->stateless()->user();
-            Log::info('GitHub User Data:', (array)$githubUser);
+            // Log::info('GitHub User Data:', (array)$githubUser);
             $user = User::where('email', $githubUser->email)->first();
             if ($user) {
                 if (!$user->github_id) {
