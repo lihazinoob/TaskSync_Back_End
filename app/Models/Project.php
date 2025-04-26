@@ -20,4 +20,10 @@ class Project extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    // A Project can have many Tasks
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
+    }
 }
