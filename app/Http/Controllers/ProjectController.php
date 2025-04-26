@@ -15,7 +15,7 @@ class ProjectController extends Controller
         // The Request Data is validated First
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
-            'category' => 'required|string|in:Active,On Hold,Closed',
+            'category' => 'required|in:Active,On Hold,Closed',
             'techStack' => 'required|string|max:255',
             'workType' => 'required|string|max:255'
         ]);
