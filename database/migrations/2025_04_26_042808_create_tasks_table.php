@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('project_id')->constrained()->onDelete('cascade');
             $table->string('title');
-            $table->enum('category',['To Do','In Pogress','Completed']);
+            $table->enum('category',['Todo','In Pogress','Completed']);
             $table->text('description')->nullable();
             $table->string('created_by');
             $table->json('assignees')->nullable();

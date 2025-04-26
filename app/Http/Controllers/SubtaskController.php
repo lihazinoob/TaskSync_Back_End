@@ -3,63 +3,67 @@
 namespace App\Http\Controllers;
 
 use App\Models\Subtask;
+use App\Models\Task;
 use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class SubtaskController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    // Function for creating a subTask under a task
+    public function createSubTask(Request $request,Task $task)
     {
-        //
+        // getting the user by the access Token
+        $user = JWTAuth::user();
+        if(!$user || $task->project->user_id !== $user->id)
+        {
+            return response()->json([
+                'message' => 'UnAuthorized'
+            ],403);
+        }
+
+        // validate the incoming data from the frontend
+        $validatedData = $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        $subTask = $task->subtasks()->create([
+            'title' => $validatedData['title'],
+            'completed' => false,
+        ]); 
+
+        return response()->json([
+            'message' => 'SubTask has been created Successfully',
+            'data' => $subTask
+        ],201);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    // Function for updating a SubTask
+    public function updateSubTask(Request $request,Subtask $subtask)
     {
-        //
-    }
+        // Getting the user via access Token
+        $user = JWTAuth::user();
+        if(!$user || $subtask->task->project->user_id !== $user->id)
+        {
+            return response()->json([
+                'message' => 'UnAuthorized'
+            ],403);
+        }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        // Validating the data
+        $validatedData = $request->validate(
+            [
+                'completed' => 'required|boolean'
+            ]
+        );
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Subtask $subtask)
-    {
-        //
-    }
+        $subtask->update([
+            'completed' => $validatedData['completed']
+        ]);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Subtask $subtask)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Subtask $subtask)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Subtask $subtask)
-    {
-        //
+        return response()->json(
+            [
+                'message' => 'Subtask has been updates successfully',
+                'data' => $subtask                
+            ],201);
     }
 }
