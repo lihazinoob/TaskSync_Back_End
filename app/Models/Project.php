@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Project extends Model
 {
-    protected $fillable =[
+    protected $fillable = [
         'name',
         'category',
         'techStack',
@@ -25,5 +25,11 @@ class Project extends Model
     public function tasks()
     {
         return $this->hasMany(Task::class);
+    }
+
+    // A project can have many users assigned to it
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'project_users')->withPivot('status')->withTimestamps();
     }
 }

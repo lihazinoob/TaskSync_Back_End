@@ -42,8 +42,8 @@ class User extends Authenticatable implements JWTSubject
      * @return array<string, string>
      */
 
-   
-    
+
+
 
     protected function casts(): array
     {
@@ -52,10 +52,24 @@ class User extends Authenticatable implements JWTSubject
             'password' => 'hashed',
         ];
     }
-     //  A user can create Many Project under his name
+    //  A user can create Many Project under his name
     public function projects()
     {
         return $this->hasMany(Project::class);
+    }
+
+    // Defining a many to many relationship between a user and a project.
+    // Because a user can be connected to many project and a project can have many users.
+    public function assignedProjects()
+    {
+        return $this->belongsToMany(Project::class, 'project_users')->withPivot('status')->withTimestamps();
+
+    }
+
+    // Defining a one to many relationship between user and notification. A user can have many notifications
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
     }
 
     // Required by JWTSubject
