@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SubtaskController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\UserController;
 use Illuminate\Container\Attributes\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,8 @@ Route::post('/login',[AuthController::class,'login']);
 Route::get('/auth/github',[AuthController::class,'redirectToGithub']);
 Route::get('/auth/github/callback',[AuthController::class,'handleGitHubCallBack']);
 
+// API for fetching all the user data.Works fine and tested
+Route::get("/allUserData",[UserController::class,'fetchAlltheUserData']);
 
 
 Route::middleware('auth:api')->group(function(){
@@ -22,6 +25,7 @@ Route::middleware('auth:api')->group(function(){
   // API for fetching the user data after login or registration.Works Successfully
   Route::get('/userData',[AuthController::class,'fetchUserData']);
   
+
   // API for creating a project. This Successfully works
   Route::post('/createProject',[ProjectController::class,'projectCreation']);
   // API for getting all the projects the user has created
