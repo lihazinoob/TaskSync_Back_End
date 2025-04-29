@@ -26,6 +26,7 @@ class TaskController extends Controller
             'title' => 'required|string|max:255',
             'category' => 'required|in:Todo,In Progress,Completed',
             'description' => 'nullable|string',
+            'created_by' => 'required|string',
             'assignees' => 'nullable|array',
             'assignees.*' => 'string|max:255',
             'timeline.start' => 'required|date',

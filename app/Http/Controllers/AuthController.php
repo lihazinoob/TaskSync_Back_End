@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Dotenv\Exception\ValidationException;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -12,6 +13,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
+use PhpParser\Node\Stmt\TryCatch;
 
 class AuthController extends Controller
 {
@@ -30,6 +32,7 @@ class AuthController extends Controller
                 'name' => $request->username,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
+                'profile_picture' => $request->profile_picture
             ]);
 
             $accesstoken = JWTAuth::fromUser($user);
@@ -187,6 +190,31 @@ class AuthController extends Controller
                 'error' => 'Unable to authenticate with Github',
                 'message' => $e->getMessage()
             ], 401);
+        }
+    }
+
+    // Function for fething the user data after registration or log in
+    public function fetchUserData()
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json([
+                    'message' => "This is not a valid user" 
+                ], 500);
+            }
+            else
+            {
+                return response()->json([
+                    'message' => "User Data successfully retrieved",
+                    'userInfo' => $user
+                ], 201);
+            }
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'An unexpected error occurred',
+                'message' => $e->getMessage(), 
+            ], 500);
         }
     }
 }

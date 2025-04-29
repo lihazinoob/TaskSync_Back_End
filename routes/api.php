@@ -18,6 +18,10 @@ Route::get('/auth/github/callback',[AuthController::class,'handleGitHubCallBack'
 
 
 Route::middleware('auth:api')->group(function(){
+
+  // API for fetching the user data after login or registration.Works Successfully
+  Route::get('/userData',[AuthController::class,'fetchUserData']);
+  
   // API for creating a project. This Successfully works
   Route::post('/createProject',[ProjectController::class,'projectCreation']);
   // API for getting all the projects the user has created
