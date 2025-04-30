@@ -63,7 +63,6 @@ class User extends Authenticatable implements JWTSubject
     public function assignedProjects()
     {
         return $this->belongsToMany(Project::class, 'project_users')->withPivot('status')->withTimestamps();
-
     }
 
     // Defining a one to many relationship between user and notification. A user can have many notifications

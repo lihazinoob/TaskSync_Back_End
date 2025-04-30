@@ -144,47 +144,93 @@ class ProjectController extends Controller
     // function for inviting a user to a project
     public function inviteUser(Request $request, Project $project)
     {
-        try{
+        try {
             $user = Auth::user();
-        // Checking if the user actually exist
-        // and more importantly checking if it is any user other than project creator. 
-        if (!$user || $project->user_id !== $user->id) {
+            // Checking if the user actually exist
+            // and more importantly checking if it is any user other than project creator. 
+            if (!$user || $project->user_id !== $user->id) {
+                return response()->json([
+                    'message' => 'Unauthorized'
+                ], 403);
+            }
+            $validatedData = $request->validate([
+                'user_id' => 'required|exists:users,id'
+            ]);
+
+            // Checking if the is already assigned or invited
+            if ($project->users()->where('user_id', $validatedData['user_id'])->exists()) {
+                return response()->json([
+                    'message' => 'This User has been already invited or assigned'
+                ], 400);
+            }
+
+            // Add user to project_users table  with pending status
+            $project->users()->attach($validatedData['user_id'], ['status' => 'pending']);
+
+            // Creating a notification for the invitation
+            Notification::create([
+                'user_id' => $validatedData['user_id'],
+                'project_id' => $project->id,
+                'type' => 'invitation',
+                'message' => "{$user->name} has invited you to join the project '{$project->name}'",
+            ]);
+
             return response()->json([
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-        $validatedData = $request->validate([
-            'user_id' => 'required|exists:users,id'
-        ]);
-
-        // Checking if the is already assigned or invited
-        if ($project->users()->where('user_id', $validatedData['user_id'])->exists()) {
-            return response()->json([
-                'message' => 'This User has been already invited or assigned'
-            ], 400);
-        }
-
-        // Add user to project with pending status
-        $project->users()->attach($validatedData['user_id'], ['status' => 'pending']);
-
-        // Creating a notification for the invitation
-        Notification::create([
-            'user_id' => $validatedData['user_id'],
-            'project_id' => $project->id,
-            'type' => 'invitation',
-            'message' => "{$user->name} has invited you to join the project '{$project->name}'",
-        ]);
-
-        return response()->json([
-            'message' => 'Invitation is sent successfully'
-        ],201);
-        }
-        catch(Exception $e)
-        {
+                'message' => 'Invitation is sent successfully'
+            ], 201);
+        } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage()
             ]);
         }
-        
+    }
+
+    // function for accepted the sent invitation
+    public function acceptInvitation(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            // validate the request data
+            $validatedData = $request->validate([
+                'user_id' => 'required|exists:users,id',
+                'project_id' => 'required|exists:projects,id'
+            ]);
+
+            // Find the project related data from the Project table
+            $project = Project::findOrFail($validatedData['project_id']);
+            $pivot = $project->users()->where('user_id', $validatedData['user_id'])->first();
+
+            // Check if the record exists
+            if (!$pivot) {
+                return response()->json([
+                    'message' => 'No invitation found for this user and project'
+                ], 404);
+            }
+
+            // Check if the status is pending
+            if ($pivot->pivot->status !== 'pending') {
+                return response()->json([
+                    'message' => 'Invitation is not pending'
+                ], 400);
+            }
+
+            // Update the status to accepted
+            $project->users()->updateExistingPivot($validatedData['user_id'], ['status' => 'accepted']);
+
+            //Optionally, mark the related notification as read
+            Notification::where('user_id', $user->id)
+                ->where('project_id', $validatedData['project_id'])
+                ->where('type', 'invitation')
+                ->update(['read' => true]);
+
+            return response()->json([
+                'message' => 'Invitation accepted successfully'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to accept invitation: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

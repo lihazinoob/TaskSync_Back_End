@@ -84,7 +84,7 @@ class AuthController extends Controller
                 'error' => 'Validation Failed',
                 'messages' => $validationException->getMessage(),
             ], 422);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'error' => 'An unexpected error occurred',
                 'message' => $e->getMessage(), // Remove in production

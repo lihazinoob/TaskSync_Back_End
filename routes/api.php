@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SubtaskController;
 use App\Http\Controllers\TaskController;
@@ -25,8 +26,12 @@ Route::middleware('auth:api')->group(function(){
   // API for fetching the user data after login or registration.Works Successfully
   Route::get('/userData',[AuthController::class,'fetchUserData']);
 
-  // API for sending invitation to a user to add to a project
+  // API for fethcing the notification of a user. Successfylly works 
+  Route::get('/fetchAllNotifications',[NotificationController::class,'fetchNotifications']);
+  // API for sending invitation to a user to add to a project. Successfully works
   Route::post('/projects/{project}/invite',[ProjectController::class,'inviteUser']);
+  // API for accepting the invitation 
+  Route::post('/projects/accept-invitation',[ProjectController::class,'acceptInvitation']);
   
 
   // API for creating a project. This Successfully works

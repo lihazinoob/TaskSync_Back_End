@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
+            // To whom the notification whould be sent
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            // For which project the notification is sent
             $table->foreignId('project_id')->constrained()->onDelete('cascade');
             // Indicates the notification type
             $table->string('type');
