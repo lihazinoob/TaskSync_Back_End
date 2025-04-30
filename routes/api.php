@@ -24,6 +24,9 @@ Route::middleware('auth:api')->group(function(){
 
   // API for fetching the user data after login or registration.Works Successfully
   Route::get('/userData',[AuthController::class,'fetchUserData']);
+
+  // API for sending invitation to a user to add to a project
+  Route::post('/projects/{project}/invite',[ProjectController::class,'inviteUser']);
   
 
   // API for creating a project. This Successfully works

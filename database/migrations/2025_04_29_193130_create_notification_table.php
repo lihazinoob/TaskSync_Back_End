@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('notification', function (Blueprint $table) {
+        Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('project_id')->constrained()->onDelete('cascade');
@@ -20,7 +20,7 @@ return new class extends Migration
             // The Message of the Notification
             $table->text('message');
             // Indicator if the message has been read or not
-            $table->boolean('read')->boolean(false);
+            $table->boolean('read')->default(false);
             
             $table->timestamps();
         });

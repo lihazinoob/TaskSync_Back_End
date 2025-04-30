@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notification;
 use App\Models\Project;
 use App\Models\Subtask;
 use App\Models\Task;
+use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -101,8 +103,7 @@ class ProjectController extends Controller
 
         // Iterating over all project data and their subsequent task and subtask data
 
-        foreach ($validatedData['projects'] as $projectData)
-        {
+        foreach ($validatedData['projects'] as $projectData) {
             // Finding the Project according to the project ID
             $project = Project::find($projectData['id']);
 
@@ -136,6 +137,54 @@ class ProjectController extends Controller
             [
                 'message' => 'Projects synced Successfully',
                 'data' => $updatedProjects
+            ]
+        );
+    }
+
+    // function for inviting a user to a project
+    public function inviteUser(Request $request, Project $project)
+    {
+        try{
+            $user = Auth::user();
+        // Checking if the user actually exist
+        // and more importantly checking if it is any user other than project creator. 
+        if (!$user || $project->user_id !== $user->id) {
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+        $validatedData = $request->validate([
+            'user_id' => 'required|exists:users,id'
+        ]);
+
+        // Checking if the is already assigned or invited
+        if ($project->users()->where('user_id', $validatedData['user_id'])->exists()) {
+            return response()->json([
+                'message' => 'This User has been already invited or assigned'
+            ], 400);
+        }
+
+        // Add user to project with pending status
+        $project->users()->attach($validatedData['user_id'], ['status' => 'pending']);
+
+        // Creating a notification for the invitation
+        Notification::create([
+            'user_id' => $validatedData['user_id'],
+            'project_id' => $project->id,
+            'type' => 'invitation',
+            'message' => "{$user->name} has invited you to join the project '{$project->name}'",
+        ]);
+
+        return response()->json([
+            'message' => 'Invitation is sent successfully'
+        ],201);
+        }
+        catch(Exception $e)
+        {
+            return response()->json([
+                'message' => $e->getMessage()
             ]);
+        }
+        
     }
 }
